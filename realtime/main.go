@@ -8,7 +8,7 @@ import (
 	socketio "github.com/googollee/go-socket.io"
 )
 
-func main() {
+func main1() {
 	server, err := socketio.NewServer(nil)
 	if err != nil {
 		log.Fatal(err)
