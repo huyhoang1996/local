@@ -1,3 +1,6 @@
 [submodule "rabbitmq"]
 	path = rabbitmq
 	url = https://github.com/huyhoang1996/rabbitmq.git
+[submodule "media"]
+	path = media
+	url = https://github.com/huyhoang1996/media.git
