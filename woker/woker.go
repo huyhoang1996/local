@@ -29,23 +29,30 @@ func Receive() {
 
 	// Create if queue not exist
 	_, err = ch.QueueDeclare(
-		"new_task", // name
-		false,      // durable
-		false,      // delete when unused
-		false,      // exclusive
-		false,      // no-wait
-		nil,        // arguments
+		"task_durable", // name
+		true,           // durable
+		false,          // delete when unused
+		false,          // exclusive
+		false,          // no-wait
+		nil,            // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
+	err = ch.Qos(
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	)
+	failOnError(err, "Failed to set QoS")
+
 	msgs, err := ch.Consume(
-		"new_task", // queue
-		"",         // consumer
-		false,      // auto-ack
-		false,      // exclusive
-		false,      // no-local
-		false,      // no-wait
-		nil,        // args
+		"task_durable", // queue
+		"",             // consumer
+		false,          // auto-ack
+		false,          // exclusive
+		false,          // no-local
+		false,          // no-wait
+		nil,            // args
 	)
 	failOnError(err, "Failed to register a consumer")
 
@@ -60,7 +67,7 @@ func Receive() {
 
 			time.Sleep(t * time.Second)
 			log.Printf("Done")
-			// Ignore van oki
+			// nếu ko có rabbit sẽ lưu untracked
 			d.Ack(false) //When multiple is true, this delivery and all prior unacknowledged deliveries on the same channel will be acknowledged
 		}
 	}()
