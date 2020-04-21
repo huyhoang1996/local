@@ -1,10 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"golang.org/x/net/websocket"
 )
@@ -46,16 +48,20 @@ func server(port string) error {
 // and broadcasts received message
 func handler(ws *websocket.Conn, h *hub) {
 	go h.run()
+	go getMessage(ws, h)
 
 	h.addClientChan <- ws
 
-	for {
+	// send
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		text := scanner.Text()
+		if text == "" {
+			continue
+		}
 		var m Message
-		err := websocket.JSON.Receive(ws, &m)
-		if err != nil {
-			h.broadcastChan <- Message{err.Error()}
-			h.removeClient(ws)
-			return
+		m = Message{
+			Text: text,
 		}
 		h.broadcastChan <- m
 	}
@@ -85,6 +91,19 @@ func (h *hub) run() {
 	}
 }
 
+func getMessage(ws *websocket.Conn, h *hub) {
+	for {
+		var m Message
+		err := websocket.JSON.Receive(ws, &m)
+		if err != nil {
+			h.broadcastChan <- Message{err.Error()}
+			h.removeClient(ws)
+			return
+		}
+		fmt.Println("Received message:: ", m)
+	}
+}
+
 // removeClient removes a conn from the pool
 func (h *hub) removeClient(conn *websocket.Conn) {
 	delete(h.clients, conn.LocalAddr().String())
@@ -92,6 +111,7 @@ func (h *hub) removeClient(conn *websocket.Conn) {
 
 // addClient adds a conn to the pool
 func (h *hub) addClient(conn *websocket.Conn) {
+	fmt.Println("ID ", conn.RemoteAddr().String())
 	h.clients[conn.RemoteAddr().String()] = conn
 }
 
