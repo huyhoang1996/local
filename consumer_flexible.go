@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"time"
 
@@ -20,7 +21,7 @@ func failOnError(err error, msg string) {
 
 func Receive_2() {
 
-	conn, err := amqp.Dial("amqp://admin:admin@192.168.1.2:5672/")
+	conn, err := amqp.Dial("amqp://admin:admin@192.168.3.212:5672/")
 	failOnError(err, "Failed to connect to RabbitMQ")
 	defer conn.Close()
 
@@ -30,25 +31,45 @@ func Receive_2() {
 
 	// Create if queue not exist
 	_, err = ch.QueueDeclare(
-		"new_task", // name
-		false,      // durable
-		false,      // delete when unused
-		false,      // exclusive
-		false,      // no-wait
-		nil,        // arguments
+		"",    // name
+		false, // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 	failOnError(err, "Failed to declare a queue")
 
 	msgs, err := ch.Consume(
-		"new_task", // queue
-		"",         // consumer
-		true,       // auto-ack
-		false,      // exclusive
-		false,      // no-local
-		false,      // no-wait
-		nil,        // args
+		"",    // queue
+		"",    // consumer
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
 	)
 	failOnError(err, "Failed to register a consumer")
+
+	// Ignore if exist
+	err = ch.ExchangeDeclare(
+		"ex_broadcast", // name
+		"fanout",       // type
+		true,           // durable
+		false,          // auto-deleted
+		false,          // internal
+		false,          // no-wait
+		nil,            // arguments
+	)
+	fmt.Println("==== ExchangeDeclare err", err)
+	err = ch.QueueBind(
+		"",             // queue name
+		"",             // routing key
+		"ex_broadcast", // exchange
+		false,
+		nil,
+	)
+	failOnError(err, "Failed to bind a queue")
 
 	forever := make(chan bool)
 
